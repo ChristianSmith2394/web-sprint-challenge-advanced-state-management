@@ -1,57 +1,70 @@
-import axios from 'axios';
-import { START_FETCH, SUCCESS_FETCH, FAIL_FETCH, ADD_SMURF } from '../actions';
+import React, { useState } from 'react';
+import { connect } from 'react-redux';
+import {successFetch, failFetch, startFetch,addSmurf} from '../actions'
 
-//Task List:
-//1. Add a thunk action called fetchSmurfs that triggers a loading status display in our application, performs an axios call to retreive smurfs from our server, saves the result of that call to our state and shows an error if one is made.
-//2. Add a standard action that allows us to add new smurf (including the name, nickname, position, summary)
-//3. Add a standard action that allows us to set the value of the error message slice of state.
-
-
-// export const START_FETCH = "START_FETCH";
-// export const SUCCESS_FETCH = "SUCCESS_FETCH";
-// export const FAIL_FETCH = "FAIL_FETCH";
-// export const ADD_SMURF = "ADD_SMURF";
+const AddForm = (props) => {
+    const [state, setState] = useState({
+        name:"",
+        position:"",
+        nickname:"",
+        description:""
+    });
 
 
-export const fetchSmurfs = () => dispatch => {
-    console.log('dispatched');
 
-    dispatch(startFetch());
 
-    axios.get("http://localhost:3333/smurfs")
-        .then(resp=> {
-            dispatch(successFetch(resp.data))
-        })
-        .catch(err => {
-            dispatch(failFetch(err))
+    const handleChange = e => {
+        setState({
+            ...state,
+            [e.target.name]:e.target.value
         });
+    }
+
+    const handleSubmit = e => {
+        e.preventDefault();
+        if (state.name === "" || state.position === "" || state.nickname === "") {
+            props.failFetch('Name, Position, and Nickname Required')
+        }
+        else{
+            props.addSmurf(state);
+        }
+    }
+
+
+
+    return(<section>
+        <h2>Add Smurf</h2>
+        <form onSubmit={handleSubmit}>
+            <div className="form-group">
+                <label htmlFor="name">Name:</label><br/>
+                <input onChange={handleChange} value={state.name} name="name" id="name" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="position">Position:</label><br/>
+                <input onChange={handleChange} value={state.position} name="position" id="position" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="nickname">Nickname:</label><br/>
+                <input onChange={handleChange} value={state.nickname} name="nickname" id="nickname" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="description">Description:</label><br/>
+                <textarea onChange={handleChange} value={state.description} name="description" id="description" />
+            </div>
+            {
+                props.error && <div data-testid="errorAlert" className="alert alert-danger" role="alert">Error: {props.error}</div>
+            }
+            <button>Submit Smurf</button>
+        </form>
+    </section>);
 }
 
+const mapStateToProps = state => {
+    return {
+        smurf: state.smurf,
+        isLoading: state.isLoading,
+        error: state.error
+    };
+};
 
-export const startFetch = ()=> {
-    return ({type:START_FETCH});
-}
-
-export const successFetch = (smurf)=> {
-    console.log("smurf",smurf)
-    return ({type:SUCCESS_FETCH, payload:smurf});
-}
-
-export const failFetch = (error)=> {
-    return ({type:FAIL_FETCH, payload:error});
-}
-
-export const addSmurf = (item) => {
-
-    axios.post("http://localhost:3333/smurfs", item)
-        .then (resp =>{
-            console.log('post', resp);
-        })
-        .catch (resp =>{
-            console.log('fail:', resp)
-        })
-    return({type:ADD_SMURF, payload:item})
-
-
-}
-
+export default connect(mapStateToProps, {startFetch,failFetch,successFetch,addSmurf})(AddForm);
